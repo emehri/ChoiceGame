@@ -1,0 +1,167 @@
+﻿@page "/"
+
+<style>
+    button {
+        font-size: small;
+        width: 120px;
+        font-weight: bolder;
+        margin: 5px;
+    }
+
+    div {
+        margin: 20px;
+        font-size: medium;
+    }
+
+    b {
+        color: blue;
+    }
+
+    .correct{
+        color:green;
+        font-size:large;
+    }
+
+    .wrong{
+        color:darkred;
+        font-size:large;
+    }
+</style>
+
+@if (!ready)
+{
+    <h1>Loading...</h1>
+}
+else
+{
+    @for (int i = 0; i < Library.Books.Count; i++)
+    {
+        int j = i;
+        @if (i % 6 == 0)
+        {
+            <br />
+        }
+        <button @onclick="()=>Book(j)" style="color:@sel[j]">@Library.Books[j]</button>
+    }
+    <br />
+    <br />
+    <button @onclick="()=>Ask()">New</button>
+    <span class="correct">
+        @Num_Correct
+         correct answers
+    </span>
+    <span> - </span>
+     <span class="wrong">
+         @Num_Wrong
+         wrong answers
+    </span>
+    <div>
+        @((MarkupString)QuestionTXT)
+    </div>
+    @if (isAsking)
+    {
+        @for (int i = 0; i < 5; i++)
+        {
+            int j = i;
+            <button @onclick="()=>checkAnswer(j)">
+                @qq.Choices[j]
+            </button>
+        }
+        <br />
+        @for (int i = 5; i < 10; i++)
+        {
+            int j = i;
+            <button @onclick="()=>checkAnswer(j)">
+                @qq.Choices[j]
+            </button>
+        }
+    }
+    else
+    {
+        @for (int i = 0; i < 5; i++)
+        {
+            int j = i;
+            <button style="color:@color[j]">@qq.Choices[j]</button>
+        }
+        <br />
+        @for (int i = 5; i < 10; i++)
+        {
+            int j = i;
+            <button style="color:@color[j]">@qq.Choices[j]</button>
+        }
+    }
+}
+@code {
+    int Num_Correct = 0, Num_Wrong = 0;
+    string QuestionTXT = "";
+    List<string> color = new List<string>();
+    bool ready = false;
+    List<string> sel = new List<string>();
+    protected override void OnInitialized()
+    {
+        Num_Correct = 0;
+        Num_Wrong = 0;
+        List<string> Gozine = new List<string>();
+        base.OnInitialized();
+        Library.Book_Index = 0;
+        Library.ReadDictionary("");
+        Library.ReadWords(Library.Book_Index);
+        for (int i = 0; i < 10; i++)
+            color.Add("black");
+        for (int i = 0; i < Library.Books.Count; i++)
+            sel.Add("black");
+        sel[Library.Book_Index] = "blue";
+        ready = true;
+        Ask();
+    }
+    void Book(int k)
+    {
+        sel[Library.Book_Index] = "black";
+        ready = false;
+        switch (Library.Books[k])
+        {
+            case "Spanish":
+                Library.ReadDictionary("SpanishDic");
+                break;
+            case "Gap":
+                Library.ReadDictionary("GapDic");
+                break;
+            default:
+                Library.ReadDictionary("");
+                break;
+        }
+        Library.Book_Index = k;
+        Library.ReadWords(k);
+        sel[Library.Book_Index] = "blue";
+        ready = true;
+        Ask();
+    }
+    void checkAnswer(int a)
+    {
+        isAsking = false;
+        color[qq.CorrectAnswer] = "green";
+        if (a != qq.CorrectAnswer)
+        { color[a] = "red"; Num_Wrong++; }
+        else Num_Correct++;
+    }
+    bool isAsking = true;
+    Question qq;
+    void Ask()
+    {
+        isAsking = true;
+        List<string> pp = Library.All_Words_In_Book[Library.Books[Library.Book_Index]];
+        string lan = "";
+        if (Library.Books[Library.Book_Index] == "Spanish")
+            lan = "Spanish";
+        if (Library.Books[Library.Book_Index] == "Gap")
+            lan = "Gap";
+        while (true)
+        {
+            qq = new Question(pp, 10, lan);
+            QuestionTXT = qq.Definition;
+            if (QuestionTXT != "") break;
+        }
+        for (int i = 0; i < 10; i++)
+            color[i] = "black";
+    }
+}
